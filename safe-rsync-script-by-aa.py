@@ -31,11 +31,13 @@ def get_abs(path):
     return os.path.abspath(os.path.expanduser(path))
 
 def run_rsync(src, dst, backup_dir, dry_run):
-    """Runs rsync and shows a single updating progress line."""
+    """Runs rsync with live terminal progress and saves only the summary to a log file."""
     os.makedirs(backup_dir, exist_ok=True)
     src = os.path.join(src, "")  # Ensure trailing slash
 
-    exclude_pattern = "000_rsync_backup_*"
+    exclude_pattern = os.path.basename(backup_dir)
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    log_filename = os.path.join(backup_dir, f"000_rsync_log_{timestamp}.log")
 
     cmd = [
         "rsync", "-a", "--delete", "--backup",
@@ -48,16 +50,51 @@ def run_rsync(src, dst, backup_dir, dry_run):
     if dry_run:
         cmd.append("--dry-run")
 
-    print(f"{CYAN}🚀 Running rsync with live progress...")
+    print(f"{CYAN}🚀 Running rsync...")
     print(f"   🔍 Dry run: {dry_run}")
-    print(f"   📦 Excluding backup dir: {exclude_pattern}")
-    print("")
+    print(f"   📦 Excluding: {exclude_pattern}")
+    print(f"   📝 Saving summary to: {log_filename}")
+    print()
 
+    stats_lines = []
     try:
-        pty.spawn(cmd)
-    except OSError as e:
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+        for line in process.stdout:
+            line = line.rstrip()
+            if line == "":
+                continue
+
+            # Detect stats lines (these start after file transfers)
+            if re.match(r'^(Number of|Total|Literal|Matched|File list|sent|total size)', line):
+                stats_lines.append(line)
+            elif "%" in line or "to-chk=" in line:
+                print(f"\r{line}", end="", flush=True)
+
+        process.wait()
+        print()  # Newline after final progress line
+
+        if process.returncode != 0:
+            print(f"{RED}❌ rsync exited with code {process.returncode}")
+            sys.exit(process.returncode)
+
+        # Write only summary to log
+        with open(log_filename, "w") as log_file:
+            for line in stats_lines:
+                log_file.write(line + "\n")
+
+        # Also show summary in terminal
+        print(f"\n{GREEN}✅ Rsync Summary:")
+        print("────────────────────────────────────────")
+        for line in stats_lines:
+            print(f"{CYAN}{line}")
+        print("────────────────────────────────────────" + RESET)
+
+    except Exception as e:
         print(f"{RED}❌ Failed to run rsync: {e}")
         sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fast and safe rsync wrapper with progress display and optional dry-run.",
