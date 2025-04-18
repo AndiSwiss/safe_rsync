@@ -16,9 +16,9 @@ from typing import NoReturn, Tuple
 # ANSI colours
 # ──────────────────────────────────────────────────────────────────────────────
 GREEN = "\033[1;32m"  # bright/bold green
-CYAN = "\033[1;36m"   # bright/bold cyan
-RED = "\033[1;31m"    # bright/bold red
-RESET = "\033[0m"     # reset style/colour
+CYAN = "\033[1;36m"  # bright/bold cyan
+RED = "\033[1;31m"  # bright/bold red
+RESET = "\033[0m"  # reset style/colour
 
 
 def colorprint(color: str, msg: str, **kwargs) -> None:  # noqa: N802
@@ -82,13 +82,13 @@ def abspath(p: str) -> str:
 def build_rsync_command(src: str, dst: str, backup_dir: str, exclude_pattern: str, dry_run: bool) -> list[str]:
     """Return the full rsync command list."""
     opts: list[str] = [
-        "-a", # archive mode
-        "-h", # human-readable
-        "--delete", # delete extraneous files from destination dirs
-        "--backup", # make backups of files that are replaced or deleted
-        f"--backup-dir={backup_dir}", # store backups in this directory
-        f"--exclude={exclude_pattern}", # exclude files matching this pattern (e.g., backup dir)
-        "--info=stats2,progress2", # show stats and progress
+        "-a",  # archive mode
+        "-h",  # human-readable
+        "--delete",  # delete extraneous files from destination dirs
+        "--backup",  # make backups of files that are replaced or deleted
+        f"--backup-dir={backup_dir}",  # store backups in this directory
+        f"--exclude={exclude_pattern}",  # exclude files matching this pattern (e.g., backup dir)
+        "--info=stats2,progress2",  # show stats and progress
     ]
     if dry_run:
         opts.insert(0, "--dry-run")  # *before* paths
@@ -213,6 +213,6 @@ def main() -> None:
     colorprint(CYAN, f"🔍 Dry run     : {args.dry_run}")
     print("────────────────────────────────────────" + RESET)
 
+
 if __name__ == "__main__":
     main()
-
