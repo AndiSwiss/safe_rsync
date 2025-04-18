@@ -6,12 +6,9 @@ import pytest
 import safe_rsync as rs
 
 
-# ─────────────────────────────────────────────────────────────────────
-# Shared fixture for CLI tests
-# ─────────────────────────────────────────────────────────────────────
 @pytest.fixture
 def script_path():
-    """Returns the absolute path to the CLI entry script safe_rsync.py."""
+    """Fixture that returns the absolute path to the CLI script safe_rsync.py."""
     path = (Path(__file__).parent.parent / "src" / "safe_rsync" / "safe_rsync.py").resolve()
     assert path.exists(), f"Script not found: {path}"
     return path
@@ -19,7 +16,10 @@ def script_path():
 
 @pytest.mark.integration
 class TestIntegration:
+    """Integration tests for full rsync behavior using real file operations."""
+
     def test_rsync_integration_copy(self, tmp_path):
+        """Ensure files and folders are copied correctly using run_rsync()."""
         src = tmp_path / "source"
         dst = tmp_path / "destination"
         src.mkdir()
@@ -44,6 +44,7 @@ class TestIntegration:
         assert "Rsync summary for" in logs[0].read_text()
 
     def test_rsync_integration_dry_run(self, tmp_path):
+        """Ensure dry-run mode does not modify destination or create logs."""
         src = tmp_path / "source"
         dst = tmp_path / "destination"
         src.mkdir()
@@ -60,6 +61,7 @@ class TestIntegration:
         assert not backup_dir.exists()
 
     def test_rsync_integration_delete_and_backup(self, tmp_path):
+        """Ensure deleted files are backed up and replaced files are updated."""
         src = tmp_path / "source"
         dst = tmp_path / "destination"
         src.mkdir()
@@ -85,6 +87,7 @@ class TestIntegration:
         assert len(logs) == 1
 
     def test_safe_rsync_main_copy(self, tmp_path, script_path):
+        """Ensure CLI call performs a real sync and generates logs."""
         src = tmp_path / "cli_src"
         dst = tmp_path / "cli_dst"
         src.mkdir()
@@ -106,6 +109,7 @@ class TestIntegration:
         assert backups
 
     def test_safe_rsync_main_dry_run(self, tmp_path, script_path):
+        """Ensure CLI dry-run mode does not modify files or create backups."""
         src = tmp_path / "cli_src"
         dst = tmp_path / "cli_dst"
         src.mkdir()

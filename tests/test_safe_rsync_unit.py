@@ -6,22 +6,18 @@ import safe_rsync as rs
 
 @pytest.mark.unit
 class TestUnit:
-    """Base class for unit tests."""
+    """Unit tests for isolated components in safe_rsync.py"""
 
-    # ────────────────────────────────────────────────────────────────────────
-    # 1.  Parsing the rsync version string
-    # ────────────────────────────────────────────────────────────────────────
     def test_parse_rsync_version(self):
+        """Test that rsync version output is parsed into a string and tuple."""
         out = "rsync  version  3.2.7  protocol 31\nCopyright (C) 1996-2022"
         ver_str, ver_tuple = rs.parse_rsync_version(out)
 
         assert ver_str == "3.2.7"
         assert ver_tuple == (3, 2, 7)
 
-    # ────────────────────────────────────────────────────────────────────────
-    # 2.  Building the rsync command
-    # ────────────────────────────────────────────────────────────────────────
     def test_build_rsync_command_basics(self, tmp_path):
+        """Test that build_rsync_command returns correct flags and structure."""
         src = tmp_path / "src"
         dst = tmp_path / "dst"
         backup = tmp_path / "backup"
@@ -37,31 +33,24 @@ class TestUnit:
             dry_run=True,
         )
 
-        # The command must start with 'rsync --dry-run' …
         assert cmd[:2] == ["rsync", "--dry-run"]
 
-        # …and contain the expected archive/delete switches.
         joined = " ".join(cmd)
         for flag in ("-ah", "--delete", "--backup", "--info=stats2,progress2"):
             pattern = rf"(?:^|\s){re.escape(flag)}(?:\s|$)"
             assert re.search(pattern, joined)
 
-    # ────────────────────────────────────────────────────────────────────────
-    # 3. Platform check
-    # ────────────────────────────────────────────────────────────────────────
     def test_check_platform(self, monkeypatch):
+        """Test that Windows platform raises an error, while Linux/macOS passes."""
         monkeypatch.setattr("platform.system", lambda: "Linux")
-        # Should not raise
-        rs.check_platform()
+        rs.check_platform()  # Should not raise
 
         monkeypatch.setattr("platform.system", lambda: "Windows")
         with pytest.raises(SystemExit):
             rs.check_platform()
 
-    # ────────────────────────────────────────────────────────────────────────
-    # 4. rsync version detection
-    # ────────────────────────────────────────────────────────────────────────
     def test_check_rsync_good_version(self, monkeypatch):
+        """Test that a valid rsync version passes the check."""
         monkeypatch.setattr("shutil.which", lambda cmd: "/usr/bin/rsync")
 
         fake_output = "rsync  version  3.2.7  protocol 31\n"
@@ -74,6 +63,7 @@ class TestUnit:
         rs.check_rsync()
 
     def test_check_rsync_too_old(self, monkeypatch):
+        """Test that an outdated rsync version raises a SystemExit."""
         monkeypatch.setattr("shutil.which", lambda cmd: "/usr/bin/rsync")
 
         old_output = "rsync  version  3.1.0  protocol 30\n"
@@ -86,14 +76,14 @@ class TestUnit:
             rs.check_rsync()
 
     def test_check_rsync_missing(self, monkeypatch):
+        """Test that missing rsync binary raises a SystemExit."""
         monkeypatch.setattr("shutil.which", lambda cmd: None)
+
         with pytest.raises(SystemExit):
             rs.check_rsync()
 
-    # ────────────────────────────────────────────────────────────────────────
-    # 5. execute_rsync
-    # ────────────────────────────────────────────────────────────────────────
     def test_execute_rsync_success(self, monkeypatch):
+        """Test that execute_rsync collects expected summary lines on success."""
         mock_lines = [
             "sending incremental file list\n",
             "to-chk=5/10\n",
@@ -120,6 +110,8 @@ class TestUnit:
         assert "Total file size: 1234 bytes" in stats
 
     def test_execute_rsync_failure(self, monkeypatch):
+        """Test that execute_rsync aborts on non-zero exit code."""
+
         class MockPopen:
             def __init__(self, *args, **kwargs):
                 self.stdout = iter(["sending incremental file list\n"])
@@ -141,10 +133,8 @@ class TestUnit:
         with pytest.raises(SystemExit):
             rs.execute_rsync(["rsync", "dummy", "args"])
 
-    # ────────────────────────────────────────────────────────────────────────
-    # 6. run_rsync orchestration logic
-    # ────────────────────────────────────────────────────────────────────────
     def test_run_rsync_dry_run(self, monkeypatch, tmp_path):
+        """Test that run_rsync executes sub-components correctly in dry-run mode."""
         mock_cmd = ["rsync", "--dry-run"]
         monkeypatch.setattr(rs, "build_rsync_command", lambda *a, **k: mock_cmd)
         monkeypatch.setattr(rs, "print_rsync_header", lambda *a, **k: None)
@@ -159,10 +149,8 @@ class TestUnit:
 
         rs.run_rsync(str(src), str(dst), str(backup), dry_run=True)
 
-    # -───────────────────────────────────────────────────────────────────────
-    # 7. print_summary
-    # -───────────────────────────────────────────────────────────────────────
     def test_print_summary(self, capsys):
+        """Test that print_summary outputs expected lines and formatting."""
         stats = [
             "Number of files: 3",
             "Total file size: 12345 bytes"
