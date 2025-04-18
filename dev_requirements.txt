@@ -1,0 +1,17 @@
+################################################################################
+# Runtime
+################################################################################
+# ‼️  safe_rsync_script_by_aa.py uses only the Python standard library.
+#     Nothing to install here; `rsync >= 3.2` is an *OS‑level* dependency.
+
+################################################################################
+# Testing & quality toolchain  (install with:  pip install -r requirements.txt)
+################################################################################
+pytest~=8.3          # ⇒ latest minor = 8.3.x (8.3.5 at the time of writing)
+pytest-cov~=6.1      # coverage reports in terminal / XML for CI
+pytest-mock~=3.14    # convenient mocker fixture
+pytest-xdist~=3.6    # `-n auto` for parallel test runs
+
+black~=25.1           # “uncompromising” code formatter
+ruff~=0.11            # ultra‑fast linter + import sorter
+mypy~=1.15            # static type checking
