@@ -44,7 +44,6 @@ def test_build_rsync_command_basics(tmp_path):
 
     # …and contain the expected archive/delete switches.
     joined = " ".join(cmd)
-    print('cmd:', cmd)
-    print('joined', joined)
-    for flag in ("-a", "--delete", "--backup", "--info=stats2,progress2"):
-        assert re.search(rf"\b{re.escape(flag)}\b", joined)
+    for flag in ("-ah", "--delete", "--backup", "--info=stats2,progress2"):
+        pattern = rf"(?:^|\s){re.escape(flag)}(?:\s|$)"
+        assert re.search(pattern, joined)
