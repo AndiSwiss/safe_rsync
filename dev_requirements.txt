@@ -1,7 +1,7 @@
 ################################################################################
 # Runtime
 ################################################################################
-# ‼️  safe_rsync_script_by_aa.py uses only the Python standard library.
+# ‼️  safe_rsync.py uses only the Python standard library.
 #     Nothing to install here; `rsync >= 3.2` is an *OS‑level* dependency.
 
 ################################################################################

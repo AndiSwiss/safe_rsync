@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/safe-rsync-script-by-aa.iml" filepath="$PROJECT_DIR$/safe-rsync-script-by-aa.iml" />
+      <module fileurl="file://$PROJECT_DIR$/safe-rsync.iml" filepath="$PROJECT_DIR$/safe-rsync.iml" />
     </modules>
   </component>
 </project>

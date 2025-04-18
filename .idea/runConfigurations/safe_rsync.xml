@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="safe_rsync_script_by_aa" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
-    <module name="safe-rsync-script-by-aa" />
+  <configuration default="false" name="safe_rsync" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+    <module name="safe-rsync" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -8,13 +8,13 @@
       <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/safe_rsync" />
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/safe_rsync_script_by_aa.py" />
-    <option name="PARAMETERS" value="&quot;testdata/Test Ordner A&quot; &quot;testdata/Test Backup 3&quot;" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/safe_rsync/safe_rsync.py" />
+    <option name="PARAMETERS" value="&quot;../../testdata-manual-testing/Test Ordner A&quot; &quot;../../testdata-manual-testing/Test Backup 4&quot;" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

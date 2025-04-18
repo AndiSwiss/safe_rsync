@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Python tests in test_safe_rsync_script_by_aa" type="tests" factoryName="Autodetect">
-    <module name="safe-rsync-script-by-aa" />
+    <module name="safe-rsync" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -11,7 +11,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="_new_additionalArguments" value="&quot;&quot;" />
-    <option name="_new_target" value="&quot;$PROJECT_DIR$/test_safe_rsync_script_by_aa.py&quot;" />
+    <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/test_safe_rsync.py&quot;" />
     <option name="_new_targetType" value="&quot;PATH&quot;" />
     <method v="2" />
   </configuration>

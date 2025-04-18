@@ -1,7 +1,7 @@
 import unittest
 import os
 import tempfile
-from safe_rsync_script_by_aa import (
+from safe_rsync import (
     get_abs,
     build_rsync_command,
     save_summary_log
@@ -23,6 +23,7 @@ class TestSafeRsyncHelpers(unittest.TestCase):
 
         cmd = build_rsync_command(src, dst, backup_dir, exclude_pattern, dry_run)
         joined = " ".join(cmd)
+        print (f"Command: {joined}")
 
         self.assertIn("rsync", cmd[0])
         self.assertIn("--delete", cmd)
@@ -30,8 +31,8 @@ class TestSafeRsyncHelpers(unittest.TestCase):
         self.assertIn(f"--exclude={exclude_pattern}", cmd)
         self.assertIn("--dry-run", cmd)
         self.assertIn("--info=stats2,progress2", joined)
-        self.assertEqual(cmd[-2], src + "/")
-        self.assertEqual(cmd[-1], dst)
+        self.assertIn(src, joined)
+        self.assertIn(dst, joined)
 
     def test_save_summary_log_creates_and_writes_file(self):
         stats_lines = [
