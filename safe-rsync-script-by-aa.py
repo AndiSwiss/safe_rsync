@@ -35,9 +35,12 @@ def run_rsync(src, dst, backup_dir, dry_run):
     os.makedirs(backup_dir, exist_ok=True)
     src = os.path.join(src, "")  # Ensure trailing slash
 
+    exclude_pattern = "000_rsync_backup_*"
+
     cmd = [
         "rsync", "-a", "--delete", "--backup",
         f"--backup-dir={backup_dir}",
+        f"--exclude={exclude_pattern}",
         "--info=stats2,progress2",
         src,
         dst
@@ -47,11 +50,8 @@ def run_rsync(src, dst, backup_dir, dry_run):
 
     print(f"{CYAN}🚀 Running rsync with live progress...")
     print(f"   🔍 Dry run: {dry_run}")
+    print(f"   📦 Excluding backup dir: {exclude_pattern}")
     print("")
-
-    # Use pty to mimic terminal behavior
-    def spawn_rsync():
-        os.execvp(cmd[0], cmd)
 
     try:
         pty.spawn(cmd)
@@ -69,11 +69,11 @@ def main():
     parser.add_argument("-n", "--dry-run", action="store_true", help="Dry run (no actual changes)")
     args = parser.parse_args()
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    backup_dir = get_abs(f"../{os.path.basename(args.dst)}_backup_{timestamp}")
-
     src = get_abs(args.src)
     dst = get_abs(args.dst)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    backup_dir = os.path.join(dst, f"000_rsync_backup_{timestamp}")
 
     if not os.path.isdir(src):
         print(f"{RED}❌ Source does not exist: {src}")
