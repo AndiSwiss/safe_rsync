@@ -83,13 +83,12 @@ def abspath(p: str) -> str:
 def build_rsync_command(src: str, dst: str, backup_dir: str, exclude_pattern: str, dry_run: bool) -> list[str]:
     """Return the full rsync command list."""
     opts: list[str] = [
-        "-a",  # archive mode
-        "-h",  # human-readable
+        "-ah",  # archive & human-readable mode
         "--delete",  # delete extraneous files from destination dirs
+        "--info=stats2,progress2",  # show stats and progress
+        f"--exclude={exclude_pattern}",  # exclude files matching this pattern (e.g., backup dir)
         "--backup",  # make backups of files that are replaced or deleted
         f"--backup-dir={backup_dir}",  # store backups in this directory
-        f"--exclude={exclude_pattern}",  # exclude files matching this pattern (e.g., backup dir)
-        "--info=stats2,progress2",  # show stats and progress
     ]
     if dry_run:
         opts.insert(0, "--dry-run")  # *before* paths
@@ -99,12 +98,16 @@ def build_rsync_command(src: str, dst: str, backup_dir: str, exclude_pattern: st
     return ["rsync", *opts, src_with_slash, dst]
 
 
-def print_rsync_header(dry_run: bool, exclude_pattern: str, log_file: str) -> None:
+def print_rsync_header(dry_run: bool, exclude_pattern: str, log_file: str, cmd: str) -> None:
     colorprint(CYAN, "🚀 Running rsync…")
     if dry_run:
         colorprint(ORANGE, "   🔍 Dry run   : True (no changes will be made)")
-    print(f"   📦 Excluding : {exclude_pattern}")
-    print(f"   📝 Log file  : {log_file}\n")
+    print(f"📦 Excluding:  {exclude_pattern}")
+    print(f"📝 Log file:   {log_file}")
+    print("🛠 Command:    ")
+    for arg in cmd:
+        print(f"       {arg}")
+    print("────────────────────────────────────────\n")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -174,7 +177,7 @@ def run_rsync(src: str, dst: str, backup_dir: str, dry_run: bool) -> None:
     log_file = os.path.join(backup_dir, f"000_rsync_log_{timestamp}.log")
 
     cmd = build_rsync_command(src, dst, backup_dir, exclude_pattern, dry_run)
-    print_rsync_header(dry_run, exclude_pattern, log_file)
+    print_rsync_header(dry_run, exclude_pattern, log_file, cmd)
 
     start = time.time()
     stats = execute_rsync(cmd)
@@ -217,12 +220,12 @@ def main() -> None:
     print("────────────────────────────────────────")
     colorprint(GREEN, "\n✅ Rsync complete.")
     print("────────────────────────────────────────")
-    colorprint(CYAN, f"📁 Source            : {src}")
-    colorprint(CYAN, f"📂 Destination       : {dst}")
+    colorprint(CYAN, f"📁 Source:             {src}")
+    colorprint(CYAN, f"📂 Destination:        {dst}")
     if dry_run:
-        colorprint(ORANGE, f"🔍 Dry run           : True (nothing has been changed)")
+        colorprint(ORANGE, f"🔍 Dry run:            True (nothing has been changed)")
     else:
-        colorprint(CYAN, f"💾 Backup incl. Log  : {backup_dir}")
+        colorprint(CYAN, f"💾 Backup incl. Log:   {backup_dir}")
 
     print("────────────────────────────────────────" + RESET)
 

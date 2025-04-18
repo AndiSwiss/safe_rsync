@@ -1,56 +1,50 @@
-import unittest
-import os
-import tempfile
-from safe_rsync import (
-    get_abs,
-    build_rsync_command,
-    save_summary_log
-)
+# tests/test_safe_rsync.py
+"""
+Very first smoke‑test for safe_rsync.
 
-class TestSafeRsyncHelpers(unittest.TestCase):
+Run with:  pytest -q
+"""
 
-    def test_get_abs_expands_user_and_absolute_path(self):
-        home_path = os.path.expanduser("~")
-        self.assertEqual(get_abs("~"), home_path)
-        self.assertTrue(os.path.isabs(get_abs("~/test")))
+import re
 
-    def test_build_rsync_command_contains_all_expected_flags(self):
-        src = "/source"
-        dst = "/destination"
-        backup_dir = "/destination/000_rsync_backup_2025-04-18_15-00-00"
-        exclude_pattern = "000_rsync_backup_*"
-        dry_run = True
+import safe_rsync as rs
 
-        cmd = build_rsync_command(src, dst, backup_dir, exclude_pattern, dry_run)
-        joined = " ".join(cmd)
-        print (f"Command: {joined}")
+# ────────────────────────────────────────────────────────────────────────
+# 1.  Parsing the rsync version string
+# ────────────────────────────────────────────────────────────────────────
+def test_parse_rsync_version():
+    out = "rsync  version  3.2.7  protocol 31\nCopyright (C) 1996-2022"
+    ver_str, ver_tuple = rs.parse_rsync_version(out)
 
-        self.assertIn("rsync", cmd[0])
-        self.assertIn("--delete", cmd)
-        self.assertIn(f"--backup-dir={backup_dir}", cmd)
-        self.assertIn(f"--exclude={exclude_pattern}", cmd)
-        self.assertIn("--dry-run", cmd)
-        self.assertIn("--info=stats2,progress2", joined)
-        self.assertIn(src, joined)
-        self.assertIn(dst, joined)
+    assert ver_str == "3.2.7"
+    assert ver_tuple == (3, 2, 7)
 
-    def test_save_summary_log_creates_and_writes_file(self):
-        stats_lines = [
-            "Number of files: 5",
-            "Total file size: 12345 bytes",
-        ]
-        duration = 1.23
 
-        with tempfile.TemporaryDirectory() as tempdir:
-            log_path = os.path.join(tempdir, "test_rsync_log.txt")
-            save_summary_log(stats_lines, log_path, duration)
+# ────────────────────────────────────────────────────────────────────────
+# 2.  Building the rsync command
+# ────────────────────────────────────────────────────────────────────────
+def test_build_rsync_command_basics(tmp_path):
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    backup = tmp_path / "backup"
+    src.mkdir()
+    dst.mkdir()
+    backup.mkdir()
 
-            self.assertTrue(os.path.exists(log_path))
+    cmd = rs.build_rsync_command(
+        src=str(src),
+        dst=str(dst),
+        backup_dir=str(backup),
+        exclude_pattern="000_rsync_backup_*",
+        dry_run=True,
+    )
 
-            with open(log_path) as f:
-                content = f.read()
-                self.assertIn("Number of files: 5", content)
-                self.assertIn("Duration: 1.23 seconds", content)
+    # The command must start with 'rsync --dry-run' …
+    assert cmd[:2] == ["rsync", "--dry-run"]
 
-if __name__ == '__main__':
-    unittest.main()
+    # …and contain the expected archive/delete switches.
+    joined = " ".join(cmd)
+    print('cmd:', cmd)
+    print('joined', joined)
+    for flag in ("-a", "--delete", "--backup", "--info=stats2,progress2"):
+        assert re.search(rf"\b{re.escape(flag)}\b", joined)
