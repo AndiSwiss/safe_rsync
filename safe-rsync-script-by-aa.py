@@ -104,7 +104,8 @@ def print_summary(stats_lines, duration=None):
 def run_rsync(src, dst, backup_dir, dry_run):
     """Orchestrates the rsync execution and summary logging, with timing."""
     os.makedirs(backup_dir, exist_ok=True)
-    exclude_pattern = os.path.basename(backup_dir)
+    exclude_pattern = "000_rsync_backup_*"
+
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     log_filename = os.path.join(backup_dir, f"000_rsync_log_{timestamp}.log")
 
