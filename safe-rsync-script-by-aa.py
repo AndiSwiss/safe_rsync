@@ -38,7 +38,9 @@ def run_rsync(src, dst, backup_dir, dry_run):
     cmd = [
         "rsync", "-a", "--delete", "--backup",
         f"--backup-dir={backup_dir}",
-        "--info=progress2", src, dst
+        "--info=stats2,progress2",
+        src,
+        dst
     ]
     if dry_run:
         cmd.append("--dry-run")
