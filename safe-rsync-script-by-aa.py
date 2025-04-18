@@ -5,15 +5,14 @@ import sys
 import os
 import datetime
 import re
-from colorama import init, Fore, Style
+import pty
 
-init(autoreset=True)
-
-# Color shortcuts
-CYAN = Fore.CYAN + Style.BRIGHT
-GREEN = Fore.GREEN + Style.BRIGHT
-RED = Fore.RED + Style.BRIGHT
-RESET = Style.RESET_ALL
+# ANSI color escape codes for terminal output
+# \033     → Escape character (starts the sequence)
+GREEN = "\033[1;32m"  # Bright green (1 = bold, 32 = green)
+CYAN  = "\033[1;36m"  # Bright cyan  (1 = bold, 36 = cyan)
+RED   = "\033[1;31m"  # Bright red   (1 = bold, 31 = red)
+RESET = "\033[0m"     # Reset to default color and style
 
 def check_rsync():
     """Check if rsync is installed and >= 3.1."""
@@ -32,6 +31,7 @@ def get_abs(path):
     return os.path.abspath(os.path.expanduser(path))
 
 def run_rsync(src, dst, backup_dir, dry_run):
+    """Runs rsync and shows a single updating progress line."""
     os.makedirs(backup_dir, exist_ok=True)
     src = os.path.join(src, "")  # Ensure trailing slash
 
@@ -43,19 +43,19 @@ def run_rsync(src, dst, backup_dir, dry_run):
     if dry_run:
         cmd.append("--dry-run")
 
-    print(f"{CYAN}🚀 Running rsync... (this might take a while)")
+    print(f"{CYAN}🚀 Running rsync with live progress...")
     print(f"   🔍 Dry run: {dry_run}")
     print("")
 
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    try:
-        for line in process.stdout:
-            if "%" in line or "to-check" in line:
-                print(line.strip())
-    except KeyboardInterrupt:
-        print(f"\n{RED}⛔ Aborted by user.")
-        sys.exit(1)
+    # Use pty to mimic terminal behavior
+    def spawn_rsync():
+        os.execvp(cmd[0], cmd)
 
+    try:
+        pty.spawn(cmd)
+    except OSError as e:
+        print(f"{RED}❌ Failed to run rsync: {e}")
+        sys.exit(1)
 def main():
     parser = argparse.ArgumentParser(
         description="Fast and safe rsync wrapper with progress display and optional dry-run.",
