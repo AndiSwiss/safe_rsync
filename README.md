@@ -11,6 +11,12 @@ A colorful, safe, and scriptable wrapper around `rsync` for macOS and Linux (req
 
 ## 🚀 Quick Start
 
+You don't need the whole project for just running the script. You only need the file `src/safe_rsync/safe_rsync.py`.
+
+You would need the whole project to further develop or test it.
+
+### Usage
+
 ```bash
 python3 src/safe_rsync/safe_rsync.py [OPTIONS] SOURCE DESTINATION
 ```
