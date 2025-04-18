@@ -158,3 +158,21 @@ class TestUnit:
         backup = dst / "backup"
 
         rs.run_rsync(str(src), str(dst), str(backup), dry_run=True)
+
+    # -───────────────────────────────────────────────────────────────────────
+    # 7. print_summary
+    # -───────────────────────────────────────────────────────────────────────
+    def test_print_summary(self, capsys):
+        stats = [
+            "Number of files: 3",
+            "Total file size: 12345 bytes"
+        ]
+        duration = 2.34
+
+        rs.print_summary(stats, duration)
+
+        captured = capsys.readouterr()
+        assert "✅ Rsync summary" in captured.out
+        assert "Number of files: 3" in captured.out
+        assert "Total file size: 12345 bytes" in captured.out
+        assert "⏱ Duration: 2.34 seconds" in captured.out
