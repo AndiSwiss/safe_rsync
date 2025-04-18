@@ -18,6 +18,7 @@ from typing import NoReturn, Tuple
 GREEN = "\033[1;32m"  # bright/bold green
 CYAN = "\033[1;36m"  # bright/bold cyan
 RED = "\033[1;31m"  # bright/bold red
+ORANGE = "\033[1;33m"  # bright/bold orange
 RESET = "\033[0m"  # reset style/colour
 
 
@@ -100,7 +101,8 @@ def build_rsync_command(src: str, dst: str, backup_dir: str, exclude_pattern: st
 
 def print_rsync_header(dry_run: bool, exclude_pattern: str, log_file: str) -> None:
     colorprint(CYAN, "🚀 Running rsync…")
-    print(f"   🔍 Dry run   : {dry_run}")
+    if dry_run:
+        colorprint(ORANGE, "   🔍 Dry run   : True (no changes will be made)")
     print(f"   📦 Excluding : {exclude_pattern}")
     print(f"   📝 Log file  : {log_file}\n")
 
@@ -140,9 +142,12 @@ def execute_rsync(cmd: list[str]) -> list[str]:
     return stats
 
 
-def save_summary(stats: list[str], path: str, duration: float) -> None:
+def save_summary(timestamp: str, stats: list[str], path: str, duration: float) -> None:
     with open(path, "w") as fh:
+        fh.write(f"Rsync summary for {timestamp}\n")
+        fh.write("\n────────────────────────────────────────\n")
         fh.write("\n".join(stats))
+        fh.write("\n────────────────────────────────────────\n")
         fh.write(f"\nDuration: {duration:.2f} seconds\n")
 
 
@@ -160,7 +165,9 @@ def print_summary(stats: list[str], duration: float) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def run_rsync(src: str, dst: str, backup_dir: str, dry_run: bool) -> None:
-    os.makedirs(backup_dir, exist_ok=True)
+    if not dry_run:
+        os.makedirs(backup_dir, exist_ok=True)
+
     exclude_pattern = "000_rsync_backup_*"  # works on macOS & Linux
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -173,7 +180,9 @@ def run_rsync(src: str, dst: str, backup_dir: str, dry_run: bool) -> None:
     stats = execute_rsync(cmd)
     duration = time.time() - start
 
-    save_summary(stats, log_file, duration)
+    if not dry_run:
+        save_summary(timestamp, stats, log_file, duration)
+
     print_summary(stats, duration)
 
 
@@ -193,7 +202,7 @@ def main() -> None:
     parser.add_argument("dst", help="Destination directory")
     parser.add_argument("-n", "--dry-run", action="store_true", help="Dry run (no changes)")
     args = parser.parse_args()
-
+    dry_run = args.dry_run
     src = abspath(args.src)
     dst = abspath(args.dst)
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -203,14 +212,18 @@ def main() -> None:
         abort(f"Source does not exist: {src}")
 
     check_rsync()
-    run_rsync(src, dst, backup_dir, args.dry_run)
+    run_rsync(src, dst, backup_dir, dry_run)
 
+    print("────────────────────────────────────────")
     colorprint(GREEN, "\n✅ Rsync complete.")
     print("────────────────────────────────────────")
-    colorprint(CYAN, f"📁 Source      : {src}")
-    colorprint(CYAN, f"📂 Destination : {dst}")
-    colorprint(CYAN, f"💾 Backup dir  : {backup_dir}")
-    colorprint(CYAN, f"🔍 Dry run     : {args.dry_run}")
+    colorprint(CYAN, f"📁 Source            : {src}")
+    colorprint(CYAN, f"📂 Destination       : {dst}")
+    if dry_run:
+        colorprint(ORANGE, f"🔍 Dry run           : True (nothing has been changed)")
+    else:
+        colorprint(CYAN, f"💾 Backup incl. Log  : {backup_dir}")
+
     print("────────────────────────────────────────" + RESET)
 
 
