@@ -5,7 +5,7 @@ import sys
 import os
 import datetime
 import re
-import pty
+import time
 
 # ANSI color escape codes for terminal output
 # \033     → Escape character (starts the sequence)
@@ -28,76 +28,99 @@ def check_rsync():
         sys.exit(1)
 
 def get_abs(path):
+    """Resolves a path to an absolute path."""
     return os.path.abspath(os.path.expanduser(path))
 
-def run_rsync(src, dst, backup_dir, dry_run):
-    """Runs rsync with live terminal progress and saves only the summary to a log file."""
-    os.makedirs(backup_dir, exist_ok=True)
-    src = os.path.join(src, "")  # Ensure trailing slash
-
-    exclude_pattern = os.path.basename(backup_dir)
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    log_filename = os.path.join(backup_dir, f"000_rsync_log_{timestamp}.log")
-
+def build_rsync_command(src, dst, backup_dir, exclude_pattern, dry_run):
+    """Builds the rsync command with desired flags and exclusions."""
     cmd = [
         "rsync", "-a", "--delete", "--backup",
         f"--backup-dir={backup_dir}",
         f"--exclude={exclude_pattern}",
         "--info=stats2,progress2",
-        src,
+        os.path.join(src, ""),  # Ensure trailing slash
         dst
     ]
     if dry_run:
         cmd.append("--dry-run")
+    return cmd
 
+def print_rsync_header(dry_run, exclude_pattern, log_filename):
+    """Prints summary header before rsync starts."""
     print(f"{CYAN}🚀 Running rsync...")
     print(f"   🔍 Dry run: {dry_run}")
     print(f"   📦 Excluding: {exclude_pattern}")
     print(f"   📝 Saving summary to: {log_filename}")
     print()
 
+def execute_rsync(cmd):
+    """Runs rsync, prints live progress, and collects final summary stats."""
     stats_lines = []
+
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
         for line in process.stdout:
             line = line.rstrip()
-            if line == "":
+            if not line:
                 continue
 
-            # Detect stats lines (these start after file transfers)
             if re.match(r'^(Number of|Total|Literal|Matched|File list|sent|total size)', line):
                 stats_lines.append(line)
             elif "%" in line or "to-chk=" in line:
                 print(f"\r{line}", end="", flush=True)
 
         process.wait()
-        print()  # Newline after final progress line
+        print()
 
         if process.returncode != 0:
             print(f"{RED}❌ rsync exited with code {process.returncode}")
             sys.exit(process.returncode)
 
-        # Write only summary to log
-        with open(log_filename, "w") as log_file:
-            for line in stats_lines:
-                log_file.write(line + "\n")
-
-        # Also show summary in terminal
-        print(f"\n{GREEN}✅ Rsync Summary:")
-        print("────────────────────────────────────────")
-        for line in stats_lines:
-            print(f"{CYAN}{line}")
-        print("────────────────────────────────────────" + RESET)
+        return stats_lines
 
     except Exception as e:
         print(f"{RED}❌ Failed to run rsync: {e}")
         sys.exit(1)
 
+def save_summary_log(stats_lines, log_filename, duration=None):
+    """Saves the summary lines (stats2) to the specified log file."""
+    with open(log_filename, "w") as log_file:
+        for line in stats_lines:
+            log_file.write(line + "\n")
+        if duration is not None:
+            log_file.write(f"Duration: {duration:.2f} seconds\n")
+
+def print_summary(stats_lines, duration=None):
+    """Prints the final rsync summary (stats2 block) to terminal."""
+    print(f"\n{GREEN}✅ Rsync Summary:")
+    print("────────────────────────────────────────")
+    for line in stats_lines:
+        print(f"{CYAN}{line}")
+    if duration is not None:
+        print(f"{CYAN}⏱ Duration: {duration:.2f} seconds")
+    print("────────────────────────────────────────" + RESET)
+
+def run_rsync(src, dst, backup_dir, dry_run):
+    """Orchestrates the rsync execution and summary logging, with timing."""
+    os.makedirs(backup_dir, exist_ok=True)
+    exclude_pattern = os.path.basename(backup_dir)
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    log_filename = os.path.join(backup_dir, f"000_rsync_log_{timestamp}.log")
+
+    cmd = build_rsync_command(src, dst, backup_dir, exclude_pattern, dry_run)
+    print_rsync_header(dry_run, exclude_pattern, log_filename)
+
+    start_time = time.time()
+    stats_lines = execute_rsync(cmd)
+    duration = time.time() - start_time
+
+    save_summary_log(stats_lines, log_filename, duration)
+    print_summary(stats_lines, duration)
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fast and safe rsync wrapper with progress display and optional dry-run.",
+        description="Fast and safe rsync wrapper with progress display, summary logging, and dry-run support.",
         epilog="Example:\n  ./safe_rsync.py -n ~/data1 ~/data2",
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -108,7 +131,6 @@ def main():
 
     src = get_abs(args.src)
     dst = get_abs(args.dst)
-
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     backup_dir = os.path.join(dst, f"000_rsync_backup_{timestamp}")
 
