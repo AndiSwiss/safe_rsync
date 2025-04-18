@@ -40,8 +40,19 @@ python3 src/safe_rsync/safe_rsync.py ~/Documents ~/Backups
 
 ---
 
-## 🧪 Running Tests
 
+## 🛠 Full project Installation for development and testing
+
+To run the tests, you need to install the project and its dependencies, including creating a venv for python.
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r dev_requirements.txt
+```
+
+---
+
+## 🧪 Testing
 ### Run all tests:
 
 ```bash
